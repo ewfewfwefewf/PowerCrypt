@@ -13,7 +13,7 @@ Adding settings is quite easy, all you need is a .json file that follows the bel
     "PrintToScreen": true,
     "EnablePrePass": true,
     "InsertDecryptFunction": true,
-    "DecryptFunctionName": "Decrypt",
+    "DecryptFunctionName": "DecodeAndDecompressString",
     "ProcessExpandableStrings": true,
     "RemoveComments": true,
     "RemoveEmptyLines": true,
@@ -29,10 +29,16 @@ Adding settings is quite easy, all you need is a .json file that follows the bel
     "EnableControlFlowObfuscation": true,
     "WrapWithControlFlow": true,
     "EnableMixedBooleanArithmetic": true,
-    "FunctionNamesToIgnore": [],
-    "VariableNamesToIgnore": [],
+    "FunctionNamesToIgnore": ["CheckValidationResult"],
+    "VariableNamesToIgnore": [
+        "ErrorActionPreference",
+        "VerbosePreference",
+        "WarningPreference",
+        "InformationPreference",
+        "DebugPreference"
+    ],
     "StringsToIgnore": [],
-    "NumbersToIgnore": []
+    "NumbersToIgnore": [0, 1]
 }
 ```
 
