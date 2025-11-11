@@ -2,7 +2,7 @@
     "PrintToScreen": true,
     "EnablePrePass": true,
     "InsertDecryptFunction": true,
-    "DecryptFunctionName": "Decrypt",
+    "DecryptFunctionName": "DecodeAndDecompressString",
     "ProcessExpandableStrings": true,
     "RemoveComments": true,
     "RemoveEmptyLines": true,
@@ -18,8 +18,14 @@
     "EnableControlFlowObfuscation": true,
     "WrapWithControlFlow": true,
     "EnableMixedBooleanArithmetic": true,
-    "FunctionNamesToIgnore": [],
-    "VariableNamesToIgnore": [],
+    "FunctionNamesToIgnore": ["CheckValidationResult"],
+    "VariableNamesToIgnore": [
+        "ErrorActionPreference",
+        "VerbosePreference",
+        "WarningPreference",
+        "InformationPreference",
+        "DebugPreference"
+    ],
     "StringsToIgnore": [],
-    "NumbersToIgnore": []
+    "NumbersToIgnore": [0, 1]
 }
