@@ -1,4 +1,6 @@
-﻿using PowerCrypt.Obfuscator;
+using System.Text.Json;
+using PowerCrypt.Obfuscator;
+using PowerCrypt.Settings;
 using Spectre.Console;
 
 namespace PowerCrypt
@@ -10,6 +12,9 @@ namespace PowerCrypt
             var startTime = DateTime.Now;
             var file_location = string.Empty;
             string outputLocation = string.Empty;
+
+            string settingsFile = string.Empty;
+
 
             if (args.Length == 0)
             {
@@ -24,7 +29,7 @@ namespace PowerCrypt
             }
             else
             {
-                if (File.Exists(args[0]))
+                if (File.Exists(args[0]) && Path.GetExtension(args[0]).ToLower() != ".json")
                 {
                     file_location = args[0];
                     outputLocation = args.Length > 1 ? args[1] : string.Empty;
@@ -32,8 +37,116 @@ namespace PowerCrypt
                 else
                 {
                     AnsiConsole.MarkupLine("[bold red]File does not exist or path input is incorrect.[/]");
+
+                    file_location = AnsiConsole.Prompt(new TextPrompt<string>("[bold blue]Enter the location of the powershell code to obfuscate\n->[/]")
+                        .Validate(path => File.Exists(path) ? ValidationResult.Success() : ValidationResult.Error("[bold red]File does not exist or path input is incorrect.[/]"))
+                    );
+                }
+
+                // set it for the below check, why are we going to bloat an if statement...
+                settingsFile = string.Empty;
+
+                if (args.Length > 2 && Path.GetExtension(args[2]).ToLower() == ".json" && File.Exists(args[2]))
+                {
+                    settingsFile = args[2];
+                }
+                else if (args.Length > 1 && Path.GetExtension(args[1]).ToLower() == ".json" && File.Exists(args[1]))
+                {
+                    settingsFile = args[1];
+                }
+
+                if (string.IsNullOrEmpty(settingsFile))
+                {
+                    AnsiConsole.MarkupLine($"[bold red]Parsed file does not end with .json[/].\n[bold purple]Please provide a valid .json file or rename the extension[/]");
                     return;
                 }
+                else
+                {
+                    try
+                    {
+                        string jsonContent = File.ReadAllText(settingsFile);
+                        using (JsonDocument doc = JsonDocument.Parse(jsonContent))
+                        {
+                            JsonElement root = doc.RootElement;
+
+                            // Debug and Output Settings
+                            if (root.TryGetProperty("PrintToScreen", out var value))
+                                AppSettings.PrintToScreen = value.GetBoolean();
+
+                            // Pre-Processing Settings
+                            if (root.TryGetProperty("EnablePrePass", out value))
+                                AppSettings.EnablePrePass = value.GetBoolean();
+                            if (root.TryGetProperty("InsertDecryptFunction", out value))
+                                AppSettings.InsertDecryptFunction = value.GetBoolean();
+                            if (root.TryGetProperty("DecryptFunctionName", out value))
+                                AppSettings.DecryptFunctionName = value.GetString();
+                            if (root.TryGetProperty("ProcessExpandableStrings", out value))
+                                AppSettings.ProcessExpandableStrings = value.GetBoolean();
+                            if (root.TryGetProperty("RemoveComments", out value))
+                                AppSettings.RemoveComments = value.GetBoolean();
+                            if (root.TryGetProperty("RemoveEmptyLines", out value))
+                                AppSettings.RemoveEmptyLines = value.GetBoolean();
+
+                            // Function Obfuscation Settings
+                            if (root.TryGetProperty("ObfuscateFunctions", out value))
+                                AppSettings.ObfuscateFunctions = value.GetBoolean();
+                            if (root.TryGetProperty("FunctionNamesToIgnore", out value))
+                                AppSettings.FunctionNamesToIgnore = new HashSet<string>(
+                                    value.EnumerateArray().Select(v => v.GetString()));
+
+                            // Variable Obfuscation Settings
+                            if (root.TryGetProperty("ObfuscateVariables", out value))
+                                AppSettings.ObfuscateVariables = value.GetBoolean();
+                            if (root.TryGetProperty("VariableNamesToIgnore", out value))
+                                AppSettings.VariableNamesToIgnore = new HashSet<string>(
+                                    value.EnumerateArray().Select(v => v.GetString()));
+
+                            // String Obfuscation Settings
+                            if (root.TryGetProperty("ObfuscateStrings", out value))
+                                AppSettings.ObfuscateStrings = value.GetBoolean();
+                            if (root.TryGetProperty("MinStringLengthToObfuscate", out value))
+                                AppSettings.MinStringLengthToObfuscate = value.GetInt32();
+                            if (root.TryGetProperty("StringsToIgnore", out value))
+                                AppSettings.StringsToIgnore = new HashSet<string>(
+                                    value.EnumerateArray().Select(v => v.GetString()));
+
+                            // Number Obfuscation Settings
+                            if (root.TryGetProperty("ObfuscateNumbers", out value))
+                                AppSettings.ObfuscateNumbers = value.GetBoolean();
+                            if (root.TryGetProperty("NumbersToIgnore", out value))
+                                AppSettings.NumbersToIgnore = new HashSet<int>(
+                                    value.EnumerateArray().Select(v => v.GetInt32()));
+
+                            // Command Obfuscation Settings
+                            if (root.TryGetProperty("ObfuscateCommands", out value))
+                                AppSettings.ObfuscateCommands = value.GetBoolean();
+                            if (root.TryGetProperty("ObfuscateBuiltInCommands", out value))
+                                AppSettings.ObfuscateBuiltInCommands = value.GetBoolean();
+                            if (root.TryGetProperty("ObfuscateBareWords", out value))
+                                AppSettings.ObfuscateBareWords = value.GetBoolean();
+                            if (root.TryGetProperty("ObfuscateCommonBareWords", out value))
+                                AppSettings.ObfuscateCommonBareWords = value.GetBoolean();
+
+                            // Control Flow Obfuscation Settings
+                            if (root.TryGetProperty("EnableControlFlowObfuscation", out value))
+                                AppSettings.EnableControlFlowObfuscation = value.GetBoolean();
+                            if (root.TryGetProperty("WrapWithControlFlow", out value))
+                                AppSettings.WrapWithControlFlow = value.GetBoolean();
+
+                            // Advanced Obfuscation Settings
+                            if (root.TryGetProperty("EnableMixedBooleanArithmetic", out value))
+                                AppSettings.EnableMixedBooleanArithmetic = value.GetBoolean();
+
+                            Console.WriteLine("Settings loaded successfully from JSON file.");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error loading settings from JSON file: {ex.Message}");
+                    }
+                }
+
+
             }
 
             var textpath = new TextPath(file_location)
